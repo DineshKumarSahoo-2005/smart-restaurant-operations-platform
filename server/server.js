@@ -5,6 +5,7 @@ import connectDB from "./config/db.js";
 import testRoutes from "./routes/testRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import restaurantRoutes from "./routes/restaurantRoutes.js";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use(express.json());
 app.use("/api/test", testRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/restaurants", restaurantRoutes);
 
 app.get("/", (req, res) => {
     res.send("Smart Restaurant API is Running...");
