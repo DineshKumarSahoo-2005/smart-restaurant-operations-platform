@@ -20,24 +20,24 @@ const inventorySchema = new mongoose.Schema(
       min: 0,
     },
 
-    unit: {
+    baseUnit: {
       type: String,
-      enum: ["kg", "g", "litre", "ml", "piece"],
+      enum: ["g", "ml", "piece"],
       required: true,
     },
 
     minimumStock: {
       type: Number,
-      default: 10,
+      default: 0,
     },
 
     expiryDate: {
       type: Date,
-    }
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export default mongoose.model("Inventory", inventorySchema);

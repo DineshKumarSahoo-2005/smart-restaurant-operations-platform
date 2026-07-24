@@ -22,9 +22,9 @@ const recipeSchema = new mongoose.Schema(
           required: true,
         },
 
-        unit: {
+        baseUnit: {
           type: String,
-          enum: ["kg", "g", "litre", "ml", "piece"],
+          enum: ["g", "ml", "piece"],
           required: true,
         },
       },
@@ -32,7 +32,7 @@ const recipeSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export default mongoose.model("Recipe", recipeSchema);

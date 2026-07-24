@@ -34,31 +34,24 @@ export const createRecipe = async (req, res) => {
       success: true,
       recipe,
     });
-
   } catch (error) {
-
     res.status(500).json({
-      success:false,
-      message:error.message
+      success: false,
+      message: error.message,
     });
-
   }
 };
 
-export const getRecipe = async (req,res)=>{
+export const getRecipe = async (req, res) => {
+  const recipe = await Recipe.findOne({
+    menuItem: req.params.menuId,
+  })
+    .populate("menuItem")
+    .populate("ingredients.inventoryItem");
 
-const recipe=await Recipe.findOne({
-menuItem:req.params.menuId
-})
-.populate("menuItem")
-.populate("ingredients.inventoryItem");
+  res.json({
+    success: true,
 
-res.json({
-
-success:true,
-
-recipe
-
-});
-
-}
+    recipe,
+  });
+};
