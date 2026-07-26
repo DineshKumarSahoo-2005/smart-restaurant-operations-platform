@@ -10,6 +10,7 @@ import menuRoutes from "./routes/menuRoutes.js";
 import inventoryRoutes from "./routes/inventoryRoutes.js";
 import recipeRoutes from "./routes/recipeRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import wasteRoutes from "./routes/wasteRoutes.js";
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use("/api/menu", menuRoutes);
 app.use("/api/inventory",inventoryRoutes);
 app.use("/api/recipes",recipeRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/waste",wasteRoutes);
 
 app.get("/", (req, res) => {
     res.send("Smart Restaurant API is Running...");

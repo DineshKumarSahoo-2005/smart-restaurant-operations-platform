@@ -34,6 +34,11 @@ const inventorySchema = new mongoose.Schema(
     expiryDate: {
       type: Date,
     },
+    costPerUnit: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
   },
   {
     timestamps: true,
