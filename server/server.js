@@ -11,6 +11,8 @@ import inventoryRoutes from "./routes/inventoryRoutes.js";
 import recipeRoutes from "./routes/recipeRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import wasteRoutes from "./routes/wasteRoutes.js";
+import analyticsRoutes from "./routes/analyticsRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 dotenv.config();
 
@@ -29,15 +31,21 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/restaurants", restaurantRoutes);
 app.use("/api/menu", menuRoutes);
-app.use("/api/inventory",inventoryRoutes);
-app.use("/api/recipes",recipeRoutes);
+app.use("/api/inventory", inventoryRoutes);
+app.use("/api/recipes", recipeRoutes);
 app.use("/api/orders", orderRoutes);
-app.use("/api/waste",wasteRoutes);
+app.use("/api/waste", wasteRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use(
+  "/api/dashboard",
+
+  dashboardRoutes,
+);
 
 app.get("/", (req, res) => {
-    res.send("Smart Restaurant API is Running...");
+  res.send("Smart Restaurant API is Running...");
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
