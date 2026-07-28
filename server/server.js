@@ -1,7 +1,11 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import http from "http";
+
 import connectDB from "./config/db.js";
+import { initializeSocket } from "./config/socket.js";
+
 import testRoutes from "./routes/testRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
@@ -15,15 +19,17 @@ import analyticsRoutes from "./routes/analyticsRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 dotenv.config();
-
 connectDB();
 
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+initializeSocket(server);
 
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
-
 app.use(express.json());
 
 app.use("/api/test", testRoutes);
@@ -36,16 +42,12 @@ app.use("/api/recipes", recipeRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/waste", wasteRoutes);
 app.use("/api/analytics", analyticsRoutes);
-app.use(
-  "/api/dashboard",
-
-  dashboardRoutes,
-);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.get("/", (req, res) => {
   res.send("Smart Restaurant API is Running...");
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+server.listen(PORT, () => {
+  console.log(`Server Running on http://localhost:${PORT}`);
 });
