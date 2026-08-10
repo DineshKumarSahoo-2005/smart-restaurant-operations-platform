@@ -13,6 +13,31 @@ import {
 const router = express.Router();
 
 // Create Order
+/**
+ * @swagger
+ * /api/orders:
+ *   post:
+ *     summary: Create a new order
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - restaurant
+ *               - items
+ *     responses:
+ *       201:
+ *         description: Order created successfully
+ *       400:
+ *         description: Invalid order data
+ *       401:
+ *         description: Unauthorized
+ */
 router.post("/", protect, createOrder);
 
 // Get All Orders

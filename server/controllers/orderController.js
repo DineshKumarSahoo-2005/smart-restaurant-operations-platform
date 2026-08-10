@@ -4,178 +4,120 @@ import {
   notifyKitchen,
   notifyManager,
 } from "../services/socketNotificationService.js";
+import asyncHandler from "../middleware/asyncHandler.js";
 
-export const createOrder = async (req, res) => {
-  try {
-    const order = await placeOrder(req.user.id, req.body);
+export const createOrder = asyncHandler(async (req, res) => {
+  const order = await placeOrder(req.user.id, req.body);
 
-    // 🔔 Emit Socket Event
-    notifyKitchen(
-  order.restaurant,
-  "newOrder",
-  {
+  // 🔔 Notify Kitchen
+  notifyKitchen(order.restaurant, "newOrder", {
     orderId: order._id,
     status: order.status,
     order,
-  }
-);
+  });
 
-notifyManager(
-  order.restaurant,
-  "dashboardUpdate",
-  {
+  // 🔔 Notify Manager Dashboard
+  notifyManager(order.restaurant, "dashboardUpdate", {
     type: "NEW_ORDER",
     orderId: order._id,
+  });
+
+  res.status(201).json({
+    success: true,
+    message: "Order placed successfully",
+    order,
+  });
+});
+
+export const getOrders = asyncHandler(async (req, res) => {
+  const orders = await Order.find()
+    .populate("restaurant")
+    .populate("items.menuItem")
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({
+    success: true,
+    count: orders.length,
+    orders,
+  });
+});
+
+export const getOrderById = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id)
+    .populate("restaurant")
+    .populate("items.menuItem");
+
+  if (!order) {
+    res.status(404);
+    throw new Error("Order not found");
   }
-);
 
-    res.status(201).json({
-      success: true,
-      message: "Order placed successfully",
-      order,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  res.status(200).json({
+    success: true,
+    order,
+  });
+});
+
+export const updateOrderStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+
+  const allowedStatus = [
+    "Pending",
+    "Preparing",
+    "Ready",
+    "Completed",
+    "Cancelled",
+  ];
+
+  if (!allowedStatus.includes(status)) {
+    res.status(400);
+    throw new Error("Invalid Status");
   }
-};
 
-export const getOrders = async (req, res) => {
-  try {
-    const orders = await Order.find()
-      .populate("restaurant")
-      .populate("items.menuItem")
-      .sort({ createdAt: -1 });
+  const order = await Order.findById(req.params.id);
 
-    res.status(200).json({
-      success: true,
-      count: orders.length,
-      orders,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  if (!order) {
+    res.status(404);
+    throw new Error("Order Not Found");
   }
-};
 
-export const getOrderById = async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id)
-      .populate("restaurant")
-      .populate("items.menuItem");
+  order.status = status;
 
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
-    }
+  await order.save();
 
-    res.status(200).json({
-      success: true,
-      order,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  // 🔔 Notify Kitchen
+  notifyKitchen(order.restaurant, "orderStatusUpdated", {
+    orderId: order._id,
+    status: order.status,
+    order,
+  });
+
+  // 🔔 Notify Manager Dashboard
+  notifyManager(order.restaurant, "dashboardUpdate", {
+    type: "ORDER_STATUS_UPDATED",
+    orderId: order._id,
+    status: order.status,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Status Updated",
+    order,
+  });
+});
+
+export const deleteOrder = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    res.status(404);
+    throw new Error("Order Not Found");
   }
-};
 
-export const updateOrderStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
+  await order.deleteOne();
 
-    const allowedStatus = [
-      "Pending",
-      "Preparing",
-      "Ready",
-      "Completed",
-      "Cancelled",
-    ];
-
-    if (!allowedStatus.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid Status",
-      });
-    }
-
-    const order = await Order.findById(req.params.id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order Not Found",
-      });
-    }
-
-    order.status = status;
-
-    await order.save();
-
-    // 🔔 Notify all connected clients
-    // Kitchen
-
-    io.to(`kitchen-${order.restaurant}`).emit("orderStatusUpdated", {
-      orderId: order._id,
-      status: order.status,
-      order,
-    });
-
-    io.to(`manager-${order.restaurant}`).emit("dashboardUpdate", {
-      type: "ORDER_STATUS_UPDATED",
-      orderId: order._id,
-      status: order.status,
-    });
-
-    // Customer
-
-    io.to(`customer-${order.user}`).emit("customerOrderUpdate", {
-      orderId: order._id,
-      status: order.status,
-      estimatedTime: "20 Minutes",
-    });
-
-    res.status(200).json({
-      success: true,
-      message: "Status Updated",
-      order,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-export const deleteOrder = async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order Not Found",
-      });
-    }
-
-    await order.deleteOne();
-
-    res.status(200).json({
-      success: true,
-      message: "Order Deleted Successfully",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+  res.status(200).json({
+    success: true,
+    message: "Order Deleted Successfully",
+  });
+});
