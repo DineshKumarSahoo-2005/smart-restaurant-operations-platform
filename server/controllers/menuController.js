@@ -38,9 +38,62 @@ export const getMenu = async (req, res) => {
       owner: req.user.id,
     });
 
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant not found",
+      });
+    }
+
     const menu = await Menu.find({
       restaurant: restaurant._id,
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: menu.length,
+      menu,
     });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+export const updateMenu = async (req, res) => {
+  try {
+    // Find the restaurant owned by the logged-in user
+    const restaurant = await Restaurant.findOne({
+      owner: req.user.id,
+    });
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant not found",
+      });
+    }
+
+    // Find menu item belonging to this restaurant
+    const menu = await Menu.findOne({
+      _id: req.params.id,
+      restaurant: restaurant._id,
+    });
+
+    if (!menu) {
+      return res.status(404).json({
+        success: false,
+        message: "Menu item not found",
+      });
+    }
+
+    // Update menu item
+    Object.assign(menu, req.body);
+
+    await menu.save();
 
     res.json({
       success: true,
@@ -54,25 +107,41 @@ export const getMenu = async (req, res) => {
   }
 };
 
-
-export const updateMenu = async (req, res) => {
-  const menu = await Menu.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true }
-  );
-
-  res.json({
-    success: true,
-    menu,
-  });
-};
-
 export const deleteMenu = async (req, res) => {
-  await Menu.findByIdAndDelete(req.params.id);
+  try {
+    const restaurant = await Restaurant.findOne({
+      owner: req.user.id,
+    });
 
-  res.json({
-    success: true,
-    message: "Menu Deleted",
-  });
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant not found",
+      });
+    }
+
+    const menu = await Menu.findOne({
+      _id: req.params.id,
+      restaurant: restaurant._id,
+    });
+
+    if (!menu) {
+      return res.status(404).json({
+        success: false,
+        message: "Menu item not found",
+      });
+    }
+
+    await menu.deleteOne();
+
+    res.json({
+      success: true,
+      message: "Menu deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 };

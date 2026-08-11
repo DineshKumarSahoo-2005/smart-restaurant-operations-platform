@@ -13,11 +13,11 @@ import { menuSchema } from "../validators/menuValidator.js";
 
 const router = express.Router();
 
-router.post("/", protect,validate(menuSchema), createMenuItem);
+router.post("/", protect, validate(menuSchema), createMenuItem);
 
 router.get("/", protect, getMenu);
 
-router.put("/:id", protect, updateMenu);
+router.put("/:id", protect, validate(menuSchema), updateMenu);
 
 router.delete("/:id", protect, deleteMenu);
 
