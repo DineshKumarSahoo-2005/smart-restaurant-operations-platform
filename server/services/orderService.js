@@ -5,10 +5,7 @@ import Menu from "../models/Menu.js";
 import Recipe from "../models/Recipe.js";
 import Order from "../models/Order.js";
 
-import {
-  checkStock,
-  deductInventory,
-} from "./inventoryService.js";
+import { checkStock, deductInventory } from "./inventoryService.js";
 
 export const placeOrder = async (ownerId, orderData) => {
   const session = await mongoose.startSession();
@@ -43,9 +40,7 @@ export const placeOrder = async (ownerId, orderData) => {
 
       // Check Availability
       if (!menu.isAvailable) {
-        throw new Error(
-          `${menu.name} is currently unavailable.`,
-        );
+        throw new Error(`${menu.name} is currently unavailable.`);
       }
 
       // Find Recipe
@@ -54,27 +49,27 @@ export const placeOrder = async (ownerId, orderData) => {
       }).populate("ingredients.inventoryItem");
 
       if (!recipe) {
-        throw new Error(
-          `Recipe not found for ${menu.name}`
-        );
+        throw new Error(`Recipe not found for ${menu.name}`);
       }
 
       // Validate Stock
       await checkStock(
         recipe.ingredients,
-        item.quantity
+        item.quantity,
+        session,
+        restaurant._id,
       );
 
       // Deduct Inventory
       await deductInventory(
         recipe.ingredients,
         item.quantity,
-        session
+        session,
+        restaurant._id,
       );
 
       // Calculate Price
-      const itemTotal =
-        menu.price * item.quantity;
+      const itemTotal = menu.price * item.quantity;
 
       totalAmount += itemTotal;
 
@@ -84,7 +79,7 @@ export const placeOrder = async (ownerId, orderData) => {
         price: menu.price,
       });
     }
-        // Create Order
+    // Create Order
     const createdOrder = await Order.create(
       [
         {
@@ -94,7 +89,7 @@ export const placeOrder = async (ownerId, orderData) => {
           status: "Pending",
         },
       ],
-      { session }
+      { session },
     );
 
     // Commit Transaction
@@ -103,16 +98,12 @@ export const placeOrder = async (ownerId, orderData) => {
     session.endSession();
 
     return createdOrder[0];
-
   } catch (error) {
-
     // Rollback Everything
     await session.abortTransaction();
 
     session.endSession();
 
     throw error;
-
   }
-
 };

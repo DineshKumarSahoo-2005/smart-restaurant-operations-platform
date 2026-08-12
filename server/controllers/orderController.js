@@ -1,4 +1,5 @@
 import Order from "../models/Order.js";
+import Restaurant from "../models/Restaurant.js";
 import { placeOrder } from "../services/orderService.js";
 import {
   notifyKitchen,
@@ -30,7 +31,18 @@ export const createOrder = asyncHandler(async (req, res) => {
 });
 
 export const getOrders = asyncHandler(async (req, res) => {
-  const orders = await Order.find()
+  const restaurant = await Restaurant.findOne({
+    owner: req.user.id,
+  });
+
+  if (!restaurant) {
+    res.status(404);
+    throw new Error("Restaurant not found");
+  }
+
+  const orders = await Order.find({
+    restaurant: restaurant._id,
+  })
     .populate("restaurant")
     .populate("items.menuItem")
     .sort({ createdAt: -1 });
@@ -43,7 +55,19 @@ export const getOrders = asyncHandler(async (req, res) => {
 });
 
 export const getOrderById = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id)
+  const restaurant = await Restaurant.findOne({
+    owner: req.user.id,
+  });
+
+  if (!restaurant) {
+    res.status(404);
+    throw new Error("Restaurant not found");
+  }
+
+  const order = await Order.findOne({
+    _id: req.params.id,
+    restaurant: restaurant._id,
+  })
     .populate("restaurant")
     .populate("items.menuItem");
 
@@ -74,11 +98,23 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     throw new Error("Invalid Status");
   }
 
-  const order = await Order.findById(req.params.id);
+  const restaurant = await Restaurant.findOne({
+    owner: req.user.id,
+  });
+
+  if (!restaurant) {
+    res.status(404);
+    throw new Error("Restaurant not found");
+  }
+
+  const order = await Order.findOne({
+    _id: req.params.id,
+    restaurant: restaurant._id,
+  });
 
   if (!order) {
     res.status(404);
-    throw new Error("Order Not Found");
+    throw new Error("Order not found");
   }
 
   order.status = status;
@@ -107,11 +143,23 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 });
 
 export const deleteOrder = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id);
+  const restaurant = await Restaurant.findOne({
+    owner: req.user.id,
+  });
+
+  if (!restaurant) {
+    res.status(404);
+    throw new Error("Restaurant not found");
+  }
+
+  const order = await Order.findOne({
+    _id: req.params.id,
+    restaurant: restaurant._id,
+  });
 
   if (!order) {
     res.status(404);
-    throw new Error("Order Not Found");
+    throw new Error("Order not found");
   }
 
   await order.deleteOne();

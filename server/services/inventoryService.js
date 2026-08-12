@@ -1,11 +1,20 @@
 import Inventory from "../models/Inventory.js";
+import Recipe from "../models/Recipe.js";
 
-export const checkStock = async (ingredients, orderedQuantity) => {
+export const checkStock = async (
+  ingredients,
+  orderedQuantity,
+  session,
+  restaurantId,
+) => {
   for (const ingredient of ingredients) {
-    const inventory = await Inventory.findById(ingredient.inventoryItem);
+    const inventory = await Inventory.findOne({
+      _id: ingredient.inventoryItem,
+      restaurant: restaurantId,
+    }).session(session);
 
     if (!inventory) {
-      throw new Error(`${ingredient.inventoryItem} not found`);
+      throw new Error("Inventory item not found for this restaurant");
     }
 
     const requiredQuantity = ingredient.quantity * orderedQuantity;
@@ -44,17 +53,31 @@ export const deductInventory = async (
   ingredients,
   orderedQuantity,
   session,
+  restaurantId,
 ) => {
   for (const ingredient of ingredients) {
-    const inventory = await Inventory.findById(
-      ingredient.inventoryItem,
-    ).session(session);
-
     const requiredQuantity = ingredient.quantity * orderedQuantity;
 
-    inventory.quantity -= requiredQuantity;
+    const inventory = await Inventory.findOneAndUpdate(
+      {
+        _id: ingredient.inventoryItem,
+        restaurant: restaurantId,
+        quantity: { $gte: requiredQuantity },
+      },
+      {
+        $inc: {
+          quantity: -requiredQuantity,
+        },
+      },
+      {
+        new: true,
+        session,
+      },
+    );
 
-    await inventory.save({ session });
+    if (!inventory) {
+      throw new Error("Insufficient stock or inventory item not found");
+    }
   }
 };
 
